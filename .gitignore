@@ -1,0 +1,18 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# env files
+.env
+.env.*
+
+# dependencies
+node_modules/
+backend/firebase.json
+backend/constants/filterKeys.js
