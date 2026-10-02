@@ -1,34 +1,71 @@
-'use client'
-import { getOrder, updateOrder } from '@/redux/slices/order';
-import { useDispatch, useSelector } from '@/redux/store/store';
-import { Box, Button, Typography } from '@mui/material'
-import { useRouter } from 'next/navigation'
-import React, { useEffect } from 'react'
-import { useState } from 'react';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+'use client';
+import { useRouter } from 'next/navigation';
+import React from 'react';
+import {
+  CheckCircle,
+  ArrowForward,
+  LocalShipping,
+  Receipt,
+} from '@mui/icons-material';
 
 const PaymentSuccess = () => {
   const router = useRouter();
 
   return (
-    <div className='bg-gradient-to-br from-green-50 to-gray-50 min-h-[80vh] flex items-center justify-center px-4'>
-      <Box sx={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',gap:'24px',backgroundColor:'white',borderRadius:'24px',p:{xs:4,md:6},maxWidth:'450px',width:'100%',boxShadow:'0 4px 24px rgba(0,0,0,0.08)'}}>
-        <Box sx={{backgroundColor:'#f0fdf4',borderRadius:'50%',p:3,display:'flex'}}>
-          <CheckCircleOutlineIcon sx={{fontSize:48,color:'#22c55e'}} />
-        </Box>
-        <Typography sx={{fontSize:{xs:'20px',md:'24px'},fontWeight:'700',color:'#111827',textAlign:'center'}}>Payment Successful!</Typography>
-        <Typography sx={{fontSize:'14px',color:'#6b7280',textAlign:'center'}}>Your order has been placed. Thank you for shopping with us!</Typography>
-        <Button onClick={() => router.push('/')} variant='contained'
-          sx={{width:'100%',backgroundColor:'#16a34a','&:hover':{backgroundColor:'#15803d'},borderRadius:'12px',py:1.5,textTransform:'none',fontSize:'15px',fontWeight:600}}>
-          Continue Shopping
-        </Button>
-        <Button onClick={() => router.push('/orders')} variant='text'
-          sx={{color:'#6b7280','&:hover':{color:'#111827',backgroundColor:'transparent'},textTransform:'none',fontSize:'14px'}}>
-          View Orders
-        </Button>
-      </Box>
-    </div>
-  )
-}
+    <div className="min-h-[85vh] bg-gradient-to-b from-emerald-50/50 to-white flex items-center justify-center px-4">
+      <div className="w-full max-w-md text-center">
+        {/* Animated check */}
+        <div className="relative mx-auto w-24 h-24 mb-8">
+          <div className="absolute inset-0 bg-emerald-100 rounded-full animate-ping opacity-30" />
+          <div className="relative w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center">
+            <CheckCircle sx={{ fontSize: 52, color: '#16a34a' }} />
+          </div>
+        </div>
 
-export default PaymentSuccess
+        <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 tracking-tight">
+          Payment Successful!
+        </h1>
+        <p className="text-neutral-500 mt-3 leading-relaxed">
+          Your order has been confirmed and is being processed. You'll receive a confirmation email shortly.
+        </p>
+
+        {/* Order info cards */}
+        <div className="grid grid-cols-2 gap-3 mt-8">
+          <div className="bg-white rounded-xl border border-neutral-100 p-4 text-left">
+            <LocalShipping sx={{ fontSize: 20, color: '#525252' }} />
+            <p className="text-xs text-neutral-400 mt-2">Estimated Delivery</p>
+            <p className="text-sm font-semibold text-neutral-800 mt-0.5">3-5 Business Days</p>
+          </div>
+          <div className="bg-white rounded-xl border border-neutral-100 p-4 text-left">
+            <Receipt sx={{ fontSize: 20, color: '#525252' }} />
+            <p className="text-xs text-neutral-400 mt-2">Payment Method</p>
+            <p className="text-sm font-semibold text-neutral-800 mt-0.5">Online Payment</p>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="mt-8 space-y-3">
+          <button
+            onClick={() => router.push('/orders')}
+            className="w-full h-12 bg-neutral-900 text-white rounded-xl text-sm font-semibold hover:bg-neutral-800 transition-colors flex items-center justify-center gap-2"
+          >
+            View My Orders
+            <ArrowForward sx={{ fontSize: 16 }} />
+          </button>
+          <button
+            onClick={() => router.push('/')}
+            className="w-full h-12 bg-neutral-100 text-neutral-700 rounded-xl text-sm font-medium hover:bg-neutral-200 transition-colors"
+          >
+            Continue Shopping
+          </button>
+        </div>
+
+        <p className="text-xs text-neutral-400 mt-6">
+          Need help? <span className="text-neutral-700 font-medium cursor-pointer hover:underline">Contact Support</span>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default PaymentSuccess;

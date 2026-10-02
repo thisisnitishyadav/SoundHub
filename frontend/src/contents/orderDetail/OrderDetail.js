@@ -1,170 +1,442 @@
-'use client'
-import { getUser, logoutUser } from '@/redux/slices/auth'
-import { Avatar, Box, Button, Divider, Step, StepLabel, Stepper, Typography } from '@mui/material'
-import React, { useEffect, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { useRouter, useParams } from 'next/navigation'
-import dayjs from 'dayjs'
-import { getSingleOrder } from '@/redux/slices/order'
-import PersonIcon from '@mui/icons-material/Person';
-import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import HeadsetMicIcon from '@mui/icons-material/HeadsetMic';
-import LogoutIcon from '@mui/icons-material/Logout';
+'use client';
+import React, { useEffect, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { useDispatch, useSelector } from 'react-redux';
+import { getUser } from '@/redux/slices/auth';
+import { getSingleOrder, updateOrder } from '@/redux/slices/order';
+import UserDashboardLayout from '@/contents/myAccount/UserDashboardLayout';
+import dayjs from 'dayjs';
+import {
+  ArrowBack,
+  CheckCircle,
+  RadioButtonUnchecked,
+  ShoppingBag,
+  LocalShipping,
+  Inventory2,
+  Receipt,
+  Schedule,
+  Cancel,
+  Close,
+  WarningAmber,
+} from '@mui/icons-material';
+
+const ORDER_STEPS = [
+  { key: 'orderConfirm', label: 'Order Confirmed' },
+  { key: 'shipped', label: 'Shipped' },
+  { key: 'outForDelivery', label: 'Out for Delivery' },
+  { key: 'delivered', label: 'Delivered' },
+];
+
+const statusConfig = {
+  pending: { label: 'Pending', bg: 'bg-amber-50', text: 'text-amber-700' },
+  active: { label: 'Active', bg: 'bg-blue-50', text: 'text-blue-700' },
+  success: { label: 'Delivered', bg: 'bg-emerald-50', text: 'text-emerald-700' },
+  cancel: { label: 'Cancelled', bg: 'bg-red-50', text: 'text-red-700' },
+  failed: { label: 'Failed', bg: 'bg-red-50', text: 'text-red-600' },
+};
+
+function getActiveStep(orderStatus) {
+  if (!orderStatus) return -1;
+  if (orderStatus.delivered?.isConfirmed) return 3;
+  if (orderStatus.outForDelivery?.isConfirmed) return 2;
+  if (orderStatus.shipped?.isConfirmed) return 1;
+  if (orderStatus.orderConfirm?.isConfirmed) return 0;
+  return -1;
+}
+
+const CANCELLABLE = ['pending', 'active'];
 
 const OrderDetail = () => {
-    const router = useRouter();
-    const dispatch = useDispatch();
-    const user = useSelector((state) => state.auth.user);
-    const {singleOrder, orders} = useSelector((state) => state.order);
-    const [orderDetail, setOrderDetail] = useState({})
-    const params = useParams()
+  const router = useRouter();
+  const dispatch = useDispatch();
+  const params = useParams();
+  const user = useSelector((state) => state.auth.user);
+  const { singleOrder } = useSelector((state) => state.order);
+  const [loading, setLoading] = useState(true);
+  const [cancelModal, setCancelModal] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
-    const handleLogout = async () => {
-        localStorage.removeItem('accessToken');
-        await dispatch(logoutUser())
-        router.push('/login')
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      await Promise.all([
+        dispatch(getUser()),
+        dispatch(getSingleOrder(params?.orderId)),
+      ]);
+      setLoading(false);
+    };
+    load();
+  }, [dispatch, params?.orderId]);
+
+  const handleCancelOrder = async () => {
+    setCancelling(true);
+    const result = await dispatch(updateOrder({ status: 'cancel' }, order.id));
+    if (result) {
+      await dispatch(getSingleOrder(params?.orderId));
     }
+    setCancelling(false);
+    setCancelModal(false);
+  };
 
-    const fetchUser = async() => { await dispatch(getUser()) }
-    const fetchOrder = async() => { await dispatch(getSingleOrder(params?.orderId)) }
+  const order = singleOrder || {};
+  const products = order.products || [];
+  const canCancel = CANCELLABLE.includes(order.status);
+  const address = order.address || {};
+  const status = statusConfig[order.status] || statusConfig.pending;
 
-    useEffect(()=>{ fetchUser(); fetchOrder() },[dispatch])
+  let mrpTotal = 0;
+  let costTotal = 0;
+  let itemCount = 0;
+  for (const item of products) {
+    mrpTotal += (item.productId?.price?.mrp || 0) * (item.qty || 1);
+    costTotal += (item.productId?.price?.cost || 0) * (item.qty || 1);
+    itemCount += (item.qty || 1);
+  }
+  const discount = mrpTotal - costTotal;
 
-    const steps = [
-      { status:"Order Confirmed", date: orderDetail?.orderStatus?.orderConfirm?.date },
-      { status:"Shipped", date: orderDetail?.orderStatus?.shipped?.date },
-      { status:"Out for Delivery", date: orderDetail?.orderStatus?.outForDelivery?.date },
-      { status:"Delivered", date: orderDetail?.orderStatus?.delivered?.date }
-    ];
+  if (loading) {
+    return (
+      <UserDashboardLayout title="Order Details">
+        <div className="flex items-center justify-center py-20">
+          <div className="w-8 h-8 border-[3px] border-neutral-200 border-t-neutral-800 rounded-full animate-spin" />
+        </div>
+      </UserDashboardLayout>
+    );
+  }
 
-    let activeSteps = ()=>{
-      if(orderDetail.orderStatus){
-        if(orderDetail.orderStatus.delivered?.isConfirmed) return 4;
-        else if(orderDetail.orderStatus.outForDelivery?.isConfirmed) return 3;
-        else if(orderDetail.orderStatus.shipped?.isConfirmed) return 2;
-        else if(orderDetail.orderStatus.orderConfirm?.isConfirmed) return 1;
-        else return 0;
-      }
-    }
-
-    let mrp = 0, cost = 0;
-    for(let order of orders){
-      for(let product of order.products){
-        mrp += (product.productId?.price?.mrp || 0)
-        cost += (product.productId?.price?.cost || 0)
-      }
-    }
-    let discount = mrp - cost;
-    let total = cost;
-
-    const sidebarItems = [
-      { label: 'Profile', icon: <PersonIcon sx={{ fontSize: 18 }} />, onClick: () => router.push('/myAccount') },
-      { label: 'Orders', icon: <ShoppingBagIcon sx={{ fontSize: 18 }} />, onClick: () => router.push('/orders'), active: true },
-      { label: 'Wishlist', icon: <FavoriteIcon sx={{ fontSize: 18 }} /> },
-      { label: 'Saved Address', icon: <LocationOnIcon sx={{ fontSize: 18 }} /> },
-      { label: 'Contact Us', icon: <HeadsetMicIcon sx={{ fontSize: 18 }} /> },
-    ];
+  if (!order.id && !loading) {
+    return (
+      <UserDashboardLayout title="Order Details">
+        <button
+          onClick={() => router.push('/orders')}
+          className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-700 transition-colors mb-5"
+        >
+          <ArrowBack sx={{ fontSize: 16 }} />
+          Back to Orders
+        </button>
+        <div className="bg-white rounded-2xl border border-neutral-200 p-8 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-3">
+            <ShoppingBag sx={{ fontSize: 24, color: '#d4d4d4' }} />
+          </div>
+          <p className="text-sm font-semibold text-neutral-800">Order not found</p>
+          <p className="text-xs text-neutral-400 mt-1">This order may have been removed or the link is invalid.</p>
+        </div>
+      </UserDashboardLayout>
+    );
+  }
 
   return (
-    <div className='bg-gray-50 min-h-screen'>
-    <Box sx={{maxWidth:'1100px',mx:'auto',px:{xs:2,md:4},py:{xs:3,md:5}}}>
-      <Typography sx={{fontSize:'24px',fontWeight:700,color:'#111827',mb:3}}>Order Details</Typography>
-      <Box sx={{display:'flex',flexDirection:{xs:'column',md:'row'},gap:3}}>
+    <UserDashboardLayout
+      title="Order Details"
+      subtitle={`Order #${order.orderId || order.id?.slice(-8) || ''}`}
+    >
+      <button
+        onClick={() => router.push('/orders')}
+        className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-700 transition-colors mb-5"
+      >
+        <ArrowBack sx={{ fontSize: 16 }} />
+        Back to Orders
+      </button>
 
-      <Box sx={{flexDirection:'column',width:'280px',backgroundColor:'white',borderRadius:'16px',boxShadow:'0 1px 3px rgba(0,0,0,0.08)',overflow:'hidden',display:{xs:'none',md:'flex'},height:'fit-content'}}>
-        <Box sx={{p:2.5,display:'flex',gap:2,alignItems:'center',background:'linear-gradient(135deg,#111827,#1f2937)'}}>
-          <Avatar sx={{width:44,height:44,backgroundColor:'#374151'}} />
-          <Box>
-            <Typography sx={{color:'white',fontWeight:600,fontSize:'15px'}}>{user.name}</Typography>
-            <Typography sx={{color:'#9ca3af',fontSize:'12px'}}>{user.email}</Typography>
-          </Box>
-        </Box>
-        {sidebarItems.map((item, i) => (
-          <Box key={i} onClick={item.onClick} sx={{display:'flex',alignItems:'center',gap:1.5,px:2.5,py:1.8,cursor:'pointer','&:hover':{backgroundColor:'#f9fafb'},borderBottom:'1px solid #f3f4f6',transition:'background-color 0.15s'}}>
-            <Box sx={{color: item.active ? '#111827' : '#9ca3af'}}>{item.icon}</Box>
-            <Typography sx={{fontSize:'14px',fontWeight: item.active ? 600 : 400,color: item.active ? '#111827' : '#4b5563'}}>{item.label}</Typography>
-          </Box>
-        ))}
-        <Box onClick={handleLogout} sx={{display:'flex',alignItems:'center',gap:1.5,px:2.5,py:1.8,cursor:'pointer','&:hover':{backgroundColor:'#fef2f2'},transition:'background-color 0.15s'}}>
-          <LogoutIcon sx={{fontSize:18,color:'#ef4444'}} />
-          <Typography sx={{fontSize:'14px',color:'#ef4444',fontWeight:500}}>Logout</Typography>
-        </Box>
-      </Box>
+      <div className="space-y-4">
+        {/* Order header card */}
+        <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs text-neutral-400">
+                Order placed {order.createdAt
+                  ? dayjs(order.createdAt).format('DD MMM YYYY, h:mm A')
+                  : '-'}
+              </p>
+              <p className="text-sm font-semibold text-neutral-900 mt-0.5">
+                Order #{order.orderId || order.id?.slice(-8)}
+              </p>
+            </div>
+            <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${status.bg} ${status.text}`}>
+              {status.label}
+            </span>
+          </div>
+          {canCancel && (
+            <div className="mt-4 pt-4 border-t border-neutral-100 flex items-center justify-between">
+              <p className="text-xs text-neutral-400">
+                {order.status === 'pending' ? 'Your order is being processed' : 'Your order is on the way'}
+              </p>
+              <button
+                onClick={() => setCancelModal(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+              >
+                <Cancel sx={{ fontSize: 14 }} />
+                Cancel Order
+              </button>
+            </div>
+          )}
+        </div>
 
-      <Box sx={{flex:1,display:'flex',flexDirection:'column',gap:2.5}}>
+        {/* Products list */}
+        <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+          <div className="px-5 py-3 border-b border-neutral-100 flex items-center gap-2">
+            <Inventory2 sx={{ fontSize: 16, color: '#a3a3a3' }} />
+            <h3 className="text-sm font-semibold text-neutral-900">
+              {itemCount} {itemCount === 1 ? 'Item' : 'Items'}
+            </h3>
+          </div>
 
-        <Box sx={{backgroundColor:'white',borderRadius:'16px',boxShadow:'0 1px 3px rgba(0,0,0,0.08)',overflow:'hidden'}}>
-          <Box sx={{display:'flex',flexDirection:{xs:'column',sm:'row'},gap:3,p:3}}>
-            <img src='https://cdn.shopify.com/s/files/1/0057/8938/4802/files/131_f04f74fd-45d4-4614-85cf-6ccf69c4cf90.jpg?v=1691395049' style={{width:'130px',height:'170px',objectFit:'cover',borderRadius:'12px'}} />
-            <Box sx={{flex:1}}>
-              <Typography sx={{fontSize:'16px',fontWeight:600,color:'#111827'}}>
-                Wireless Earbud {orderDetail?.productId?.title?.shortTitle}
-              </Typography>
-              <Typography sx={{fontSize:'14px',color:'#6b7280',mt:0.5}}>
-                Airdopes 131 {orderDetail?.productId?.title?.longTitle}
-              </Typography>
-              <Typography sx={{fontSize:'20px',fontWeight:700,color:'#111827',mt:1}}>
-                ₹1999 {orderDetail?.productId?.price?.cost}
-              </Typography>
-            </Box>
-            <Box sx={{display:'flex',alignItems:{xs:'stretch',sm:'flex-start'}}}>
-              <Button variant='outlined' size="small" sx={{borderRadius:'8px',textTransform:'none',borderColor:'#fecaca',color:'#ef4444','&:hover':{borderColor:'#ef4444',backgroundColor:'#fef2f2'},fontSize:'13px',whiteSpace:'nowrap'}}>Cancel Order</Button>
-            </Box>
-          </Box>
-        </Box>
+          <div className="divide-y divide-neutral-100">
+            {products.map((item, idx) => {
+              const prod = item.productId;
+              const activeStep = getActiveStep(item.orderStatus);
 
-        <Box sx={{backgroundColor:'white',borderRadius:'16px',boxShadow:'0 1px 3px rgba(0,0,0,0.08)',p:3}}>
-          <Typography sx={{fontWeight:600,fontSize:'16px',color:'#111827',mb:1.5}}>Shipping Details</Typography>
-          <Box sx={{display:'flex',gap:1}}>
-            <Typography sx={{fontSize:'14px',fontWeight:500,color:'#374151'}}>{user.name} {user.lastName}</Typography>
-          </Box>
-          <Typography sx={{fontSize:'13px',color:'#6b7280',mt:0.5}}>Locality: BTM Layout {orders[0]?.address?.locality}</Typography>
-          <Typography sx={{fontSize:'13px',color:'#6b7280'}}>City: Bangalore {orders[0]?.address?.city}</Typography>
-          <Typography sx={{fontSize:'13px',color:'#6b7280'}}>Pincode: 560029 {orders[0]?.address?.state} {orders[0]?.address?.zipcode}</Typography>
-          <Typography sx={{fontSize:'13px',color:'#6b7280'}}>Phone: 9129842706 {user.phone}</Typography>
-        </Box>
+              return (
+                <div key={idx} className="p-5">
+                  <div className="flex gap-4">
+                    <div
+                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-neutral-100 overflow-hidden shrink-0 cursor-pointer"
+                      onClick={() => prod?.id && router.push(`/product/${prod.id}`)}
+                    >
+                      {prod?.image ? (
+                        <img src={prod.image} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ShoppingBag sx={{ fontSize: 22, color: '#d4d4d4' }} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className="text-sm sm:text-base font-semibold text-neutral-900 truncate cursor-pointer hover:text-neutral-600 transition-colors"
+                        onClick={() => prod?.id && router.push(`/product/${prod.id}`)}
+                      >
+                        {prod?.title?.shortTitle || 'Product'}
+                      </p>
+                      <p className="text-xs text-neutral-400 mt-0.5 truncate">
+                        {prod?.title?.longTitle}
+                      </p>
+                      <div className="flex items-baseline gap-2 mt-2">
+                        <span className="text-base font-bold text-neutral-900">
+                          ₹{(prod?.price?.cost || 0).toLocaleString()}
+                        </span>
+                        {prod?.price?.mrp && prod.price.mrp !== prod.price.cost && (
+                          <span className="text-xs text-neutral-400 line-through">
+                            ₹{prod.price.mrp.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-neutral-400 mt-1">Qty: {item.qty || 1}</p>
+                    </div>
+                  </div>
 
-        <Box sx={{display:'flex',gap:2.5,flexDirection:{xs:'column',sm:'row'}}}>
-          <Box sx={{flex:1,backgroundColor:'white',borderRadius:'16px',boxShadow:'0 1px 3px rgba(0,0,0,0.08)',p:3}}>
-            <Typography sx={{fontWeight:600,fontSize:'16px',color:'#111827',mb:2}}>Price Details</Typography>
-            {[
-              ['Total Items', '1'],
-              ['Total MRP', `₹${mrp}`],
-              ['Discount', `- ₹${discount}`],
-              ['GST', '₹gst'],
-            ].map(([label, val]) => (
-              <Box key={label} sx={{display:'flex',justifyContent:'space-between',py:0.5}}>
-                <Typography sx={{fontSize:'13px',color:'#6b7280'}}>{label}</Typography>
-                <Typography sx={{fontSize:'13px',color: label === 'Discount' ? '#22c55e' : '#374151',fontWeight:500}}>{val}</Typography>
-              </Box>
-            ))}
-            <Divider sx={{my:1.5}} />
-            <Box sx={{display:'flex',justifyContent:'space-between'}}>
-              <Typography sx={{fontSize:'14px',fontWeight:700,color:'#111827'}}>Total</Typography>
-              <Typography sx={{fontSize:'14px',fontWeight:700,color:'#111827'}}>₹{total}</Typography>
-            </Box>
-          </Box>
+                  {/* Order tracking for this product */}
+                  <div className="mt-5 pt-4 border-t border-neutral-100">
+                    <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-4">
+                      Tracking
+                    </p>
+                    <div className="relative">
+                      {ORDER_STEPS.map((step, i) => {
+                        const isCompleted = i <= activeStep;
+                        const isCurrent = i === activeStep;
+                        const stepDate = item.orderStatus?.[step.key]?.date;
 
-          <Box sx={{flex:1,backgroundColor:'white',borderRadius:'16px',boxShadow:'0 1px 3px rgba(0,0,0,0.08)',p:3}}>
-            <Typography sx={{fontWeight:600,fontSize:'16px',color:'#111827',mb:2}}>Order Status</Typography>
-            <Stepper activeStep={activeSteps()} orientation='vertical'>
-              {steps.map((label, index) => (
-                <Step key={index}>
-                  <StepLabel>{label.status}</StepLabel>
-                  <Typography sx={{fontSize:'11px',color:'#9ca3af',ml:4}}>{label.date && dayjs(label.date).format('DD MMM YYYY')}</Typography>
-                </Step>
-              ))}
-            </Stepper>
-          </Box>
-        </Box>
-      </Box>
+                        return (
+                          <div key={step.key} className="flex gap-3.5 pb-5 last:pb-0 relative">
+                            {i < ORDER_STEPS.length - 1 && (
+                              <div
+                                className={`absolute left-[9px] top-[24px] w-0.5 h-[calc(100%-12px)] ${
+                                  isCompleted && i < activeStep ? 'bg-emerald-500' : 'bg-neutral-200'
+                                }`}
+                              />
+                            )}
+                            <div className="shrink-0 relative z-10">
+                              {isCompleted ? (
+                                <div
+                                  className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                                    isCurrent ? 'bg-emerald-500 ring-[3px] ring-emerald-100' : 'bg-emerald-500'
+                                  }`}
+                                >
+                                  <CheckCircle sx={{ fontSize: 13, color: 'white' }} />
+                                </div>
+                              ) : (
+                                <div className="w-5 h-5 rounded-full border-2 border-neutral-200 bg-white" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p
+                                className={`text-sm font-medium ${
+                                  isCompleted ? 'text-neutral-900' : 'text-neutral-400'
+                                }`}
+                              >
+                                {step.label}
+                              </p>
+                              {stepDate && (
+                                <p className="text-[11px] text-neutral-400 mt-0.5">
+                                  {dayjs(stepDate).format('DD MMM YYYY, h:mm A')}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
-      </Box>
-    </Box>
-    </div>
-  )
-}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Shipping Address */}
+          <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <LocalShipping sx={{ fontSize: 16, color: '#a3a3a3' }} />
+              <h3 className="text-sm font-semibold text-neutral-900">Shipping Address</h3>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-neutral-700">
+                {user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(' ') || '-'}
+              </p>
+              {address.locality && (
+                <p className="text-xs text-neutral-500">{address.locality}</p>
+              )}
+              <p className="text-xs text-neutral-500">
+                {[address.city, address.state].filter(Boolean).join(', ')}
+              </p>
+              {address.zipcode && (
+                <p className="text-xs text-neutral-500">PIN: {address.zipcode}</p>
+              )}
+              {address.country && (
+                <p className="text-xs text-neutral-400">{address.country}</p>
+              )}
+              {user?.phone && (
+                <p className="text-xs text-neutral-500 mt-2">Phone: {user.phone}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Price Details */}
+          <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Receipt sx={{ fontSize: 16, color: '#a3a3a3' }} />
+              <h3 className="text-sm font-semibold text-neutral-900">Price Details</h3>
+            </div>
+            <div className="space-y-2.5">
+              <div className="flex justify-between">
+                <span className="text-xs text-neutral-500">
+                  Price ({itemCount} {itemCount === 1 ? 'item' : 'items'})
+                </span>
+                <span className="text-xs font-medium text-neutral-700">
+                  ₹{mrpTotal.toLocaleString()}
+                </span>
+              </div>
+              {discount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-xs text-neutral-500">Discount</span>
+                  <span className="text-xs font-medium text-emerald-600">
+                    - ₹{discount.toLocaleString()}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-xs text-neutral-500">Shipping</span>
+                <span className="text-xs font-medium text-emerald-600">Free</span>
+              </div>
+              <div className="border-t border-dashed border-neutral-200 my-1" />
+              <div className="flex justify-between">
+                <span className="text-sm font-bold text-neutral-900">Total</span>
+                <span className="text-sm font-bold text-neutral-900">
+                  ₹{costTotal.toLocaleString()}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment info */}
+        {order.paymentId && (
+          <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+            <h3 className="text-sm font-semibold text-neutral-900 mb-2">Payment</h3>
+            <p className="text-xs text-neutral-500">
+              Payment ID: {order.paymentId}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Cancel Confirmation Modal */}
+      {cancelModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => !cancelling && setCancelModal(false)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-xl border border-neutral-200 w-full max-w-sm mx-4 p-6">
+            <button
+              onClick={() => !cancelling && setCancelModal(false)}
+              className="absolute top-4 right-4 p-1 rounded-lg hover:bg-neutral-100 text-neutral-400"
+            >
+              <Close sx={{ fontSize: 18 }} />
+            </button>
+
+            <div className="flex flex-col items-center text-center">
+              <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mb-4">
+                <WarningAmber sx={{ fontSize: 28, color: '#ef4444' }} />
+              </div>
+              <h3 className="text-lg font-semibold text-neutral-900">Cancel this order?</h3>
+              <p className="text-sm text-neutral-500 mt-1.5">
+                Order #{order.orderId || order.id?.slice(-8)} will be cancelled. This action cannot be undone.
+              </p>
+
+              {products[0]?.productId && (
+                <div className="w-full mt-4 p-3 bg-neutral-50 rounded-xl flex items-center gap-3 text-left">
+                  {products[0].productId.image && (
+                    <img
+                      src={products[0].productId.image}
+                      alt=""
+                      className="w-12 h-12 rounded-lg object-cover bg-neutral-200 shrink-0"
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-neutral-800 truncate">
+                      {products[0].productId.title?.shortTitle || 'Product'}
+                    </p>
+                    <p className="text-xs text-neutral-400">
+                      {products.length} {products.length === 1 ? 'item' : 'items'}
+                      {products[0].productId.price?.cost && (
+                        <> · ₹{products[0].productId.price.cost.toLocaleString()}</>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 w-full mt-6">
+                <button
+                  onClick={() => setCancelModal(false)}
+                  disabled={cancelling}
+                  className="flex-1 h-11 border border-neutral-200 rounded-xl text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors disabled:opacity-50"
+                >
+                  Keep Order
+                </button>
+                <button
+                  onClick={handleCancelOrder}
+                  disabled={cancelling}
+                  className="flex-1 h-11 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 disabled:bg-red-400 transition-colors flex items-center justify-center gap-2"
+                >
+                  {cancelling ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Cancelling...
+                    </>
+                  ) : (
+                    'Yes, Cancel'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </UserDashboardLayout>
+  );
+};
 
 export default OrderDetail;

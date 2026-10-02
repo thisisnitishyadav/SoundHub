@@ -68,16 +68,26 @@ class OrderApi{
       }
 
       async getSignleOrder(id){
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_HOST}/userapp/order/get/${id}`,{
-          method: "get",
-          headers: { 
-          "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
+        let obj = {
+          "query": { "_id": id },
+          "options": {
+            "populate": "products.productId",
+            "page": 1,
+            "limit": 1,
+            "pagination": false
+          },
+          "isCountOnly": false
+        };
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/userapp/order/list`, obj, {
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
           }
         });
-          if(response.data.status==='SUCCESS')
-          return response.data;
-          else
-           return false;
+        if (response.data.status === 'SUCCESS') {
+          const orders = response.data.data?.data || [];
+          return { status: 'SUCCESS', data: orders[0] || null };
+        }
+        return false;
       }
 
     async deleteOrder(id){

@@ -1,12 +1,14 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FavoriteBorder, Star } from '@mui/icons-material';
+import { getFeaturedProducts, defaultFeatured } from '@/lib/featuredConfig';
 
-const products = [
+const fallbackProducts = [
   {
     name: 'Airdopes 131',
-    category: 'True Wireless',
+    category: 'wireless-earphones',
+    categoryLabel: 'True Wireless',
     price: 899,
     mrp: 2999,
     rating: 4.5,
@@ -17,7 +19,8 @@ const products = [
   },
   {
     name: 'Airdopes 141',
-    category: 'True Wireless',
+    category: 'wireless-earphones',
+    categoryLabel: 'True Wireless',
     price: 1299,
     mrp: 4490,
     rating: 4.3,
@@ -28,7 +31,8 @@ const products = [
   },
   {
     name: 'Storm Smartwatch',
-    category: 'Smart Watch',
+    category: 'smart-watches',
+    categoryLabel: 'Smart Watch',
     price: 1499,
     mrp: 5999,
     rating: 4.6,
@@ -39,7 +43,8 @@ const products = [
   },
   {
     name: 'Nirvana 751 ANC',
-    category: 'Headphones',
+    category: 'headphone',
+    categoryLabel: 'Headphones',
     price: 2499,
     mrp: 7990,
     rating: 4.7,
@@ -50,7 +55,8 @@ const products = [
   },
   {
     name: 'Stone 750',
-    category: 'Wireless Speaker',
+    category: 'wireless-speakers',
+    categoryLabel: 'Wireless Speaker',
     price: 1799,
     mrp: 5990,
     rating: 4.4,
@@ -60,7 +66,8 @@ const products = [
   },
   {
     name: 'Airdopes 161',
-    category: 'True Wireless',
+    category: 'wireless-earphones',
+    categoryLabel: 'True Wireless',
     price: 999,
     mrp: 2490,
     rating: 4.2,
@@ -71,7 +78,8 @@ const products = [
   },
   {
     name: 'Rockerz 551 ANC',
-    category: 'Headphones',
+    category: 'headphone',
+    categoryLabel: 'Headphones',
     price: 1999,
     mrp: 5990,
     rating: 4.5,
@@ -81,7 +89,8 @@ const products = [
   },
   {
     name: 'Wave Call',
-    category: 'Smart Watch',
+    category: 'smart-watches',
+    categoryLabel: 'Smart Watch',
     price: 1299,
     mrp: 4990,
     rating: 4.3,
@@ -94,6 +103,11 @@ const products = [
 
 const FeaturedProducts = () => {
   const router = useRouter();
+  const [products, setProducts] = useState(fallbackProducts);
+
+  useEffect(() => {
+    setProducts(getFeaturedProducts());
+  }, []);
 
   return (
     <section className="py-16 md:py-24 px-6 md:px-12 bg-gray-50">
@@ -107,7 +121,7 @@ const FeaturedProducts = () => {
             onClick={() => router.push('/collection/wireless-earphones')}
             className="hidden md:flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
           >
-            View all products
+            View all
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -136,15 +150,23 @@ const FeaturedProducts = () => {
                   src={product.image}
                   alt={product.name}
                   className="w-full h-full object-cover cursor-pointer transition-transform duration-700 group-hover:scale-105"
-                  onClick={() => router.push('/product')}
+                  onClick={() => router.push(`/collection/${product.category || 'wireless-earphones'}`)}
                 />
+                <div className="absolute bottom-0 inset-x-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                  <button
+                    onClick={() => router.push(`/collection/${product.category || 'wireless-earphones'}`)}
+                    className="w-full py-2.5 rounded-xl bg-gray-900/90 backdrop-blur-sm text-white text-xs md:text-sm font-medium hover:bg-gray-900 transition-colors"
+                  >
+                    Shop Now
+                  </button>
+                </div>
               </div>
 
               <div className="p-3 md:p-4">
-                <p className="text-[10px] md:text-xs text-gray-400 uppercase tracking-wider font-medium">{product.category}</p>
+                <p className="text-[10px] md:text-xs text-gray-400 uppercase tracking-wider font-medium">{product.categoryLabel}</p>
                 <p
                   className="text-sm md:text-base font-semibold text-gray-900 mt-1 cursor-pointer hover:text-gray-600 transition-colors truncate"
-                  onClick={() => router.push('/product')}
+                  onClick={() => router.push(`/collection/${product.category || 'wireless-earphones'}`)}
                 >
                   {product.name}
                 </p>
@@ -152,7 +174,7 @@ const FeaturedProducts = () => {
                 <div className="flex items-center gap-1 mt-1.5">
                   <Star sx={{ fontSize: 13, color: '#fbbf24' }} />
                   <span className="text-xs font-medium text-gray-700">{product.rating}</span>
-                  <span className="text-xs text-gray-400">({product.reviews.toLocaleString()})</span>
+                  <span className="text-xs text-gray-400">({(product.reviews || 0).toLocaleString()})</span>
                 </div>
 
                 <div className="flex items-baseline gap-2 mt-2">
@@ -162,10 +184,6 @@ const FeaturedProducts = () => {
                     {Math.round((1 - product.price / product.mrp) * 100)}% off
                   </span>
                 </div>
-
-                <button className="w-full mt-3 py-2.5 rounded-xl bg-gray-900 text-white text-xs md:text-sm font-medium hover:bg-gray-800 transition-all duration-300 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0">
-                  Add to Cart
-                </button>
               </div>
             </div>
           ))}

@@ -3,7 +3,9 @@ import { useParams, useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getProducts } from '@/redux/slices/product';
-import { FilterList, Close, Star, FavoriteBorder, GridView, ViewList, KeyboardArrowDown } from '@mui/icons-material';
+import { createCart } from '@/redux/slices/cart';
+import { initWishlist, toggleWishlist } from '@/redux/slices/wishlist';
+import { FilterList, Close, Star, FavoriteBorder, Favorite, GridView, ViewList, KeyboardArrowDown } from '@mui/icons-material';
 
 const PRICE_FILTERS = [
   { key: 'ab', label: 'Under ₹1,000', min: 0, max: 1000 },
@@ -39,6 +41,8 @@ const ProductCollection = () => {
   const router = useRouter();
   const dispatch = useDispatch();
   const data = useSelector((state) => state.product.products);
+  const user = useSelector((state) => state.auth.user);
+  const wishlistItems = useSelector((state) => state.wishlist.items);
   const params = useParams();
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
@@ -77,6 +81,7 @@ const ProductCollection = () => {
       await dispatch(getProducts(1, 12, { "title.longTitle": { "$regex": params?.productId }, "$options": "i" }));
     };
     fetchProducts();
+    dispatch(initWishlist());
   }, [params]);
 
   const categoryName = params.productId?.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -290,8 +295,24 @@ const ProductCollection = () => {
                           {item.price.discount}
                         </span>
                       )}
-                      <button className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:scale-110">
-                        <FavoriteBorder sx={{ fontSize: 16, color: '#374151' }} />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          dispatch(toggleWishlist({
+                            id: item.id,
+                            title: item.title,
+                            price: item.price,
+                            image: item.image,
+                            category: item.category,
+                          }));
+                        }}
+                        className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:scale-110"
+                      >
+                        {wishlistItems.some((w) => w.id === item.id) ? (
+                          <Favorite sx={{ fontSize: 16, color: '#ef4444' }} />
+                        ) : (
+                          <FavoriteBorder sx={{ fontSize: 16, color: '#374151' }} />
+                        )}
                       </button>
                       <img
                         src={item.image}
@@ -301,6 +322,12 @@ const ProductCollection = () => {
                       />
                       <div className="absolute bottom-0 inset-x-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                         <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!user?.id) { router.push('/login'); return; }
+                            dispatch(createCart({ userId: user.id, products: [{ productId: item.id, qty: 1 }] }))
+                              .then((result) => { if (result) router.push(`/cart/${item.id}`); });
+                          }}
                           className="w-full py-2.5 rounded-xl bg-gray-900/90 backdrop-blur-sm text-white text-xs font-medium hover:bg-gray-900 transition-colors"
                         >
                           Add to Cart

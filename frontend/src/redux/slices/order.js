@@ -25,13 +25,13 @@ const slice = createSlice({
              state.singleOrder = {...action.payload}
            },
         updateOrder(state,action){
-        let event= action.payload.data
+        let event = action.payload.data || action.payload;
             state.orders = state.orders.map((item) => {
                 if(item.id===event.id)
-                return event;
+                  return event;
                 return item;
             })
-            
+
            },
        
         deleteOrder(state,action){

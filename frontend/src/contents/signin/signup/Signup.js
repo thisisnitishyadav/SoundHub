@@ -1,38 +1,202 @@
-'use client'
-import { useFormik } from "formik";
-import React, { useState } from 'react'
-import { SignUpSchema } from "../../../schema";
-import { useDispatch } from "react-redux";
+'use client';
+import { useFormik } from 'formik';
+import React, { useState, useRef } from 'react';
+import { SignUpSchema } from '../../../schema';
+import { useDispatch } from 'react-redux';
 import { register } from '@/redux/slices/auth';
+import { authApi } from '@/mocks/auth';
 import { useRouter } from 'next/navigation';
-import { PersonOutline, EmailOutlined, LockOutlined, Visibility, VisibilityOff } from '@mui/icons-material';
+import {
+  PersonOutline,
+  EmailOutlined,
+  LockOutlined,
+  Visibility,
+  VisibilityOff,
+  CheckCircle,
+  ArrowBack,
+} from '@mui/icons-material';
 
 const Signup = () => {
   const router = useRouter();
   const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
+  const [step, setStep] = useState('form');
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otpError, setOtpError] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const otpRefs = useRef([]);
 
-  const initialValue = {
-    name: "",
-    email: "",
-    password: "",
+  const { values, errors, touched, handleChange, handleBlur, handleSubmit, isSubmitting } =
+    useFormik({
+      validationSchema: SignUpSchema,
+      initialValues: { name: '', email: '', password: '' },
+      onSubmit: async (values, action) => {
+        const { name, email, password } = values;
+        const result = await dispatch(register({ name, email, password }));
+        if (result) {
+          setRegisteredEmail(email);
+          setSendingOtp(true);
+          const otpResult = await authApi.sendResetPasswordOtp({ email });
+          setSendingOtp(false);
+          if (otpResult?.status === 'SUCCESS') {
+            setStep('otp');
+          } else {
+            setStep('success');
+          }
+        }
+      },
+    });
+
+  const handleOtpChange = (index, value) => {
+    if (value.length > 1) value = value.slice(-1);
+    if (!/^\d*$/.test(value)) return;
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+    setOtpError('');
+    if (value && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
   };
 
-  const { values, errors, touched, handleChange, handleBlur, handleSubmit, isSubmitting } = useFormik({
-    validationSchema: SignUpSchema,
-    initialValues: initialValue,
-    onSubmit: async (values, action) => {
-      const { name, email, password } = values;
-      const data = { name, email, password };
-      const result = await dispatch(register(data));
-      if (result) {
-        alert("Registered Successfully");
-        router.push("/login");
-        action.resetForm();
-      }
-    },
-  });
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
 
+  const handleVerifyOtp = async () => {
+    const code = otp.join('');
+    if (code.length < 4) {
+      setOtpError('Please enter the complete OTP');
+      return;
+    }
+    setOtpLoading(true);
+    setOtpError('');
+    const result = await authApi.validateOtp({ otp: code });
+    setOtpLoading(false);
+    if (result?.status === 'SUCCESS') {
+      setStep('success');
+    } else {
+      setOtpError(result?.message || 'Invalid OTP. Please try again.');
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setSendingOtp(true);
+    setOtpError('');
+    setOtp(['', '', '', '', '', '']);
+    await authApi.sendResetPasswordOtp({ email: registeredEmail });
+    setSendingOtp(false);
+  };
+
+  // OTP verification step
+  if (step === 'otp') {
+    return (
+      <div className="min-h-[calc(100vh-70px)] flex items-center justify-center px-6 py-12 bg-white">
+        <div className="w-full max-w-[400px] text-center">
+          <div className="w-14 h-14 rounded-2xl bg-violet-100 flex items-center justify-center mx-auto mb-6">
+            <EmailOutlined sx={{ fontSize: 28, color: '#7c3aed' }} />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Verify your email</h2>
+          <p className="text-sm text-gray-400 mt-2">
+            We sent a verification code to
+            <br />
+            <span className="text-gray-700 font-medium">{registeredEmail}</span>
+          </p>
+
+          <div className="flex justify-center gap-2.5 mt-8">
+            {otp.map((digit, i) => (
+              <input
+                key={i}
+                ref={(el) => (otpRefs.current[i] = el)}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handleOtpChange(i, e.target.value)}
+                onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                className={`w-11 h-13 text-center text-lg font-semibold border rounded-xl outline-none transition-all ${
+                  otpError
+                    ? 'border-red-300 bg-red-50/50'
+                    : digit
+                    ? 'border-gray-900 bg-white'
+                    : 'border-gray-200 bg-gray-50 focus:border-gray-900 focus:bg-white'
+                }`}
+              />
+            ))}
+          </div>
+
+          {otpError && (
+            <p className="text-red-500 text-xs mt-3">{otpError}</p>
+          )}
+
+          <button
+            onClick={handleVerifyOtp}
+            disabled={otpLoading}
+            className="w-full h-12 bg-[#0a0a0a] text-white rounded-xl text-sm font-semibold hover:bg-gray-800 disabled:opacity-50 transition-all mt-6"
+          >
+            {otpLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Verifying...
+              </span>
+            ) : (
+              'Verify Email'
+            )}
+          </button>
+
+          <p className="text-sm text-gray-400 mt-4">
+            Didn&apos;t receive the code?{' '}
+            <button
+              onClick={handleResendOtp}
+              disabled={sendingOtp}
+              className="text-gray-900 font-medium hover:underline disabled:opacity-50"
+            >
+              {sendingOtp ? 'Sending...' : 'Resend'}
+            </button>
+          </p>
+
+          <button
+            onClick={() => setStep('success')}
+            className="text-xs text-gray-400 hover:text-gray-600 mt-3"
+          >
+            Skip for now
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Success step
+  if (step === 'success') {
+    return (
+      <div className="min-h-[calc(100vh-70px)] flex items-center justify-center px-6 py-12 bg-white">
+        <div className="w-full max-w-[400px] text-center">
+          <div className="relative mx-auto w-20 h-20 mb-6">
+            <div className="absolute inset-0 bg-emerald-100 rounded-full animate-ping opacity-30" />
+            <div className="relative w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center">
+              <CheckCircle sx={{ fontSize: 44, color: '#16a34a' }} />
+            </div>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Account created!</h2>
+          <p className="text-sm text-gray-400 mt-2">
+            Your account has been successfully created. Sign in to start shopping.
+          </p>
+          <button
+            onClick={() => router.push('/login')}
+            className="w-full h-12 bg-[#0a0a0a] text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all mt-8"
+          >
+            Continue to Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Registration form
   return (
     <div className="min-h-[calc(100vh-70px)] flex">
       <div className="hidden lg:flex lg:w-1/2 bg-[#0a0a0a] relative overflow-hidden items-center justify-center">
@@ -43,25 +207,22 @@ const Signup = () => {
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
-            backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+            backgroundImage:
+              'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
           }}
         />
-
         <div className="relative z-10 px-12 max-w-lg">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm mb-8">
             <span className="w-2 h-2 rounded-full bg-[#7c4dff] animate-pulse" />
             <span className="text-xs text-white/50 uppercase tracking-widest font-medium">Join Us</span>
           </div>
-
           <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight tracking-tight">
             Start your<br />
             <span className="text-[#7c4dff]">audio journey.</span>
           </h1>
-
           <p className="text-white/40 mt-6 text-base leading-relaxed">
             Create an account to unlock exclusive deals, early access to new launches, and a personalized shopping experience.
           </p>
-
           <div className="mt-10 pt-8 border-t border-white/10 space-y-4">
             {[
               { label: 'Exclusive member deals', desc: 'Up to 70% off on select products' },
@@ -71,7 +232,7 @@ const Signup = () => {
               <div key={perk.label} className="flex items-start gap-3">
                 <div className="w-5 h-5 rounded-full bg-[#7c4dff]/20 flex items-center justify-center mt-0.5 flex-shrink-0">
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M2 5L4 7L8 3" stroke="#7c4dff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M2 5L4 7L8 3" stroke="#7c4dff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
                 <div>
@@ -152,7 +313,7 @@ const Signup = () => {
                   onBlur={handleBlur}
                   name="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Min 8 characters"
+                  placeholder="Min 6 characters"
                   className={`w-full h-12 pl-10 pr-11 border rounded-xl text-sm transition-all placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-900 ${
                     errors.password && touched.password ? 'border-red-300 bg-red-50/50' : 'border-gray-200 bg-gray-50/50 hover:border-gray-300'
                   }`}
@@ -170,13 +331,13 @@ const Signup = () => {
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || sendingOtp}
               className="w-full h-12 bg-[#0a0a0a] text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
             >
-              {isSubmitting ? (
+              {isSubmitting || sendingOtp ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Creating account...
+                  {sendingOtp ? 'Sending verification...' : 'Creating account...'}
                 </span>
               ) : (
                 'Create account'
@@ -185,12 +346,8 @@ const Signup = () => {
           </form>
 
           <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-100" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="bg-white px-4 text-xs text-gray-400">or</span>
-            </div>
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100" /></div>
+            <div className="relative flex justify-center"><span className="bg-white px-4 text-xs text-gray-400">or</span></div>
           </div>
 
           <button
@@ -206,7 +363,7 @@ const Signup = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default Signup;

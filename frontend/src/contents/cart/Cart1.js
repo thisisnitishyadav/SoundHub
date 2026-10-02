@@ -9,32 +9,21 @@ const Cart1 = () => {
   const router = useRouter();
   const dispatch = useDispatch();
   const { carts } = useSelector((state) => state.cart);
-  const user = useSelector((state) => state.auth);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [filters, setFilters] = useState({ 'isDeleted': false, 'userId': user?.user?.id });
-
-  const fetchCart = async () => {
-    try {
-      await dispatch(readCart(page, limit, filters));
-      return true;
-    } catch (error) {
-      console.error('Error', error);
-      return false;
-    }
-  };
+  const user = useSelector((state) => state.auth.user);
 
   const handleDelete = async (cartId) => {
     await dispatch(deleteCart(cartId));
   };
 
   const handleCreateOrder = async () => {
-    router.push(`/checkout/${carts?.id}`);
+    router.push(`/checkout/${carts?.[0]?.id || 'order'}`);
   };
 
   useEffect(() => {
-    fetchCart();
-  }, [page, filters]);
+    if (user?.id) {
+      dispatch(readCart(1, 10, { isDeleted: false, userId: user.id }));
+    }
+  }, [user?.id]);
 
   let total = 0;
   let itemCount = 0;

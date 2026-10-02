@@ -1,8 +1,29 @@
 'use client'
 import React from 'react'
+import { useRouter } from 'next/navigation';
 import { Facebook, Instagram, LinkedIn, X, YouTube } from '@mui/icons-material';
 
 function Footer() {
+  const router = useRouter();
+
+  const shopLinks = [
+    { label: 'True Wireless Earbuds', href: '/collection/wireless-earphones' },
+    { label: 'Neckbands', href: '/collection/neckbands' },
+    { label: 'Smart Watches', href: '/collection/smart-watches' },
+    { label: 'Headphones', href: '/collection/headphone' },
+    { label: 'Wireless Speakers', href: '/collection/wireless-speakers' },
+    { label: 'Party Speakers', href: '/collection/party-speakers' },
+  ];
+
+  const helpLinks = [
+    { label: 'Track Your Order', href: '/orders' },
+    { label: 'My Account', href: '/myAccount' },
+    { label: 'Return Policy', href: '/collection/wireless-earphones' },
+    { label: 'Contact Us', href: '/collection/wireless-earphones' },
+    { label: 'Bulk Orders', href: '/collection/wireless-earphones' },
+    { label: 'FAQs', href: '/collection/wireless-earphones' },
+  ];
+
   return (
     <>
       <div className="bg-[#0a0a0a] text-gray-300">
@@ -11,7 +32,8 @@ function Footer() {
             <img
               src="https://soundhub.io/wp-content/uploads/2023/08/SoundHub-Logo-2048x410.png"
               alt="SoundHub"
-              className="w-36 md:w-40 brightness-0 invert"
+              className="w-36 md:w-40 brightness-0 invert cursor-pointer"
+              onClick={() => router.push('/')}
             />
             <p className="text-sm text-gray-500 leading-relaxed">
               Premium audio & wearable tech. Engineered for your lifestyle.
@@ -38,8 +60,8 @@ function Footer() {
           <div>
             <p className="text-white font-semibold text-xs uppercase tracking-[0.15em] mb-5">Shop</p>
             <ul className="space-y-3">
-              {['True Wireless Earbuds', 'Wired Headphones', 'Home Audio', 'Smart Watches', 'Wireless Headphones', 'Wireless Speakers'].map((item) => (
-                <li key={item} className="text-sm text-gray-500 hover:text-white cursor-pointer transition-colors">{item}</li>
+              {shopLinks.map((item) => (
+                <li key={item.label} onClick={() => router.push(item.href)} className="text-sm text-gray-500 hover:text-white cursor-pointer transition-colors">{item.label}</li>
               ))}
             </ul>
           </div>
@@ -47,8 +69,8 @@ function Footer() {
           <div>
             <p className="text-white font-semibold text-xs uppercase tracking-[0.15em] mb-5">Help</p>
             <ul className="space-y-3">
-              {['Track Your Order', 'Warranty & Support', 'Return Policy', 'Service Centers', 'Bulk Orders', 'FAQs'].map((item) => (
-                <li key={item} className="text-sm text-gray-500 hover:text-white cursor-pointer transition-colors">{item}</li>
+              {helpLinks.map((item) => (
+                <li key={item.label} onClick={() => router.push(item.href)} className="text-sm text-gray-500 hover:text-white cursor-pointer transition-colors">{item.label}</li>
               ))}
             </ul>
           </div>
@@ -57,7 +79,7 @@ function Footer() {
             <p className="text-white font-semibold text-xs uppercase tracking-[0.15em] mb-5">Company</p>
             <ul className="space-y-3">
               {['About SoundHub', 'News', 'Blog', 'Careers', 'Security', 'Investor Relations'].map((item) => (
-                <li key={item} className="text-sm text-gray-500 hover:text-white cursor-pointer transition-colors">{item}</li>
+                <li key={item} onClick={() => router.push('/')} className="text-sm text-gray-500 hover:text-white cursor-pointer transition-colors">{item}</li>
               ))}
             </ul>
 

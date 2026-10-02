@@ -80,7 +80,33 @@ class AuthApi{
        return false;
     } 
 
+  async sendResetPasswordOtp(data) {
+    try {
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/userapp/auth/reset-password-otp`, data);
+      return res.data;
+    } catch (error) {
+      return { status: 'FAILURE', message: error?.response?.data?.message || error.message };
+    }
   }
+
+  async validateOtp(data) {
+    try {
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/userapp/auth/validate-otp`, data);
+      return res.data;
+    } catch (error) {
+      return { status: 'FAILURE', message: error?.response?.data?.message || error.message };
+    }
+  }
+
+  async resetPassword(data) {
+    try {
+      const res = await axios.put(`${process.env.NEXT_PUBLIC_HOST}/userapp/auth/reset-password`, data);
+      return res.data;
+    } catch (error) {
+      return { status: 'FAILURE', message: error?.response?.data?.message || error.message };
+    }
+  }
+}
 
 
 export const authApi = new AuthApi();

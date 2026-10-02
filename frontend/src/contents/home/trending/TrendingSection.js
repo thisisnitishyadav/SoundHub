@@ -1,11 +1,13 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Star, LocalShipping, Verified, HeadsetMic } from '@mui/icons-material';
+import { getTrendingProducts } from '@/lib/featuredConfig';
 
-const trendingProducts = [
+const fallbackTrending = [
   {
     name: 'Airdopes 121 v2',
+    category: 'wireless-earphones',
     tagline: '8mm Drivers | BEAST Mode',
     price: 1299,
     mrp: 2999,
@@ -14,6 +16,7 @@ const trendingProducts = [
   },
   {
     name: 'Xtend Smartwatch',
+    category: 'smart-watches',
     tagline: 'Alexa Enabled | AMOLED',
     price: 1677,
     mrp: 7964,
@@ -22,6 +25,7 @@ const trendingProducts = [
   },
   {
     name: 'Stone 350 Speaker',
+    category: 'wireless-speakers',
     tagline: '10W Output | IPX7',
     price: 1499,
     mrp: 3490,
@@ -30,6 +34,7 @@ const trendingProducts = [
   },
   {
     name: 'Storm Call Watch',
+    category: 'smart-watches',
     tagline: 'BT Calling | SpO2',
     price: 1499,
     mrp: 7364,
@@ -46,6 +51,11 @@ const features = [
 
 const TrendingSection = () => {
   const router = useRouter();
+  const [trendingProducts, setTrendingProducts] = useState(fallbackTrending);
+
+  useEffect(() => {
+    setTrendingProducts(getTrendingProducts());
+  }, []);
 
   return (
     <section className="py-16 md:py-24">
@@ -62,7 +72,7 @@ const TrendingSection = () => {
             <div
               key={i}
               className="group flex items-center gap-4 md:gap-6 bg-white border border-gray-100 rounded-2xl md:rounded-3xl p-4 md:p-5 hover:border-gray-200 hover:shadow-lg transition-all duration-500 cursor-pointer"
-              onClick={() => router.push('/product')}
+              onClick={() => router.push(`/collection/${product.category}`)}
             >
               <div className="flex-shrink-0 w-28 h-28 md:w-36 md:h-36 rounded-xl md:rounded-2xl overflow-hidden bg-gray-50">
                 <img
@@ -82,8 +92,11 @@ const TrendingSection = () => {
                   <span className="text-lg font-bold text-gray-900">₹{product.price.toLocaleString()}</span>
                   <span className="text-xs text-gray-400 line-through">₹{product.mrp.toLocaleString()}</span>
                 </div>
-                <button className="mt-3 px-5 py-2 rounded-lg bg-gray-900 text-white text-xs font-medium hover:bg-gray-800 transition-colors">
-                  Add to Cart
+                <button
+                  onClick={(e) => { e.stopPropagation(); router.push(`/collection/${product.category}`); }}
+                  className="mt-3 px-5 py-2 rounded-lg bg-gray-900 text-white text-xs font-medium hover:bg-gray-800 transition-colors"
+                >
+                  Shop Now
                 </button>
               </div>
             </div>

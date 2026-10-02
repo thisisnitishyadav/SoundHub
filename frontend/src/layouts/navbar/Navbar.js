@@ -275,21 +275,30 @@ const Navbar = () => {
 
               {/* Account */}
               <button
-                className="p-2 rounded-xl hover:bg-neutral-100 transition-colors relative group"
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl hover:bg-neutral-100 transition-colors"
                 onClick={() =>
                   router.push(isLoggedIn ? '/myAccount' : '/login')
                 }
                 aria-label="Account"
               >
-                <Person sx={{ fontSize: 20, color: '#525252' }} />
+                {isLoggedIn ? (
+                  <div className="w-7 h-7 rounded-full bg-neutral-900 flex items-center justify-center text-white text-[11px] font-bold">
+                    {(user.firstName || user.name || user.email || '?')[0].toUpperCase()}
+                  </div>
+                ) : (
+                  <Person sx={{ fontSize: 20, color: '#525252' }} />
+                )}
                 {isLoggedIn && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white" />
+                  <span className="hidden md:block text-xs font-medium text-neutral-700 max-w-[80px] truncate">
+                    {user.firstName || user.name?.split(' ')[0] || 'Account'}
+                  </span>
                 )}
               </button>
 
               {/* Wishlist */}
               <button
                 className="hidden sm:flex p-2 rounded-xl hover:bg-neutral-100 transition-colors"
+                onClick={() => router.push('/myAccount/wishlist')}
                 aria-label="Wishlist"
               >
                 <FavoriteBorder sx={{ fontSize: 20, color: '#525252' }} />
@@ -435,6 +444,20 @@ const Navbar = () => {
 
             {/* Account Section */}
             <div className="p-4 space-y-0.5">
+              {isLoggedIn && (
+                <div className="flex items-center gap-3 p-2.5 mb-2">
+                  <div className="w-10 h-10 rounded-full bg-neutral-900 flex items-center justify-center text-white text-sm font-bold">
+                    {(user.firstName || user.name || user.email || '?')[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-neutral-800">
+                      {user.firstName || user.name?.split(' ')[0] || 'User'}
+                    </p>
+                    <p className="text-[11px] text-neutral-400 truncate max-w-[180px]">{user.email}</p>
+                  </div>
+                </div>
+              )}
+
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
@@ -466,6 +489,10 @@ const Navbar = () => {
               </button>
 
               <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  router.push('/myAccount/wishlist');
+                }}
                 className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-50 active:bg-neutral-100 transition-colors text-left"
               >
                 <div className="w-10 h-10 rounded-lg bg-neutral-50 flex items-center justify-center">

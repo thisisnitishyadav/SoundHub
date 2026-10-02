@@ -1,27 +1,76 @@
-'use client'
-import { Box, Button, Typography } from '@mui/material'
-import { useRouter } from 'next/navigation'
-import React from 'react'
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+'use client';
+import { useRouter } from 'next/navigation';
+import React from 'react';
+import {
+  ErrorOutline,
+  Refresh,
+  ArrowForward,
+  HeadsetMic,
+} from '@mui/icons-material';
 
 const PaymentFailure = () => {
-    const router = useRouter();
+  const router = useRouter();
 
   return (
-    <div className='bg-gradient-to-br from-red-50 to-gray-50 min-h-[80vh] flex items-center justify-center px-4'>
-      <Box sx={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',gap:'24px',backgroundColor:'white',borderRadius:'24px',p:{xs:4,md:6},maxWidth:'450px',width:'100%',boxShadow:'0 4px 24px rgba(0,0,0,0.08)'}}>
-        <Box sx={{backgroundColor:'#fef2f2',borderRadius:'50%',p:3,display:'flex'}}>
-          <ErrorOutlineIcon sx={{fontSize:48,color:'#ef4444'}} />
-        </Box>
-        <Typography sx={{fontSize:{xs:'20px',md:'24px'},fontWeight:'700',color:'#111827',textAlign:'center'}}>Payment Failed</Typography>
-        <Typography sx={{fontSize:'14px',color:'#6b7280',textAlign:'center'}}>Something went wrong with your payment. Please try again.</Typography>
-        <Button onClick={() => router.push('/')} variant='contained'
-          sx={{width:'100%',backgroundColor:'#111827','&:hover':{backgroundColor:'#1f2937'},borderRadius:'12px',py:1.5,textTransform:'none',fontSize:'15px',fontWeight:600}}>
-          Continue Shopping
-        </Button>
-      </Box>
-    </div>
-  )
-}
+    <div className="min-h-[85vh] bg-gradient-to-b from-red-50/50 to-white flex items-center justify-center px-4">
+      <div className="w-full max-w-md text-center">
+        {/* Animated icon */}
+        <div className="relative mx-auto w-24 h-24 mb-8">
+          <div className="absolute inset-0 bg-red-100 rounded-full animate-pulse opacity-40" />
+          <div className="relative w-24 h-24 bg-red-100 rounded-full flex items-center justify-center">
+            <ErrorOutline sx={{ fontSize: 52, color: '#dc2626' }} />
+          </div>
+        </div>
 
-export default PaymentFailure
+        <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 tracking-tight">
+          Payment Failed
+        </h1>
+        <p className="text-neutral-500 mt-3 leading-relaxed">
+          We couldn't process your payment. Don't worry — no money has been deducted from your account.
+        </p>
+
+        {/* Common issues */}
+        <div className="bg-white rounded-xl border border-neutral-100 p-4 mt-8 text-left">
+          <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">Common reasons</p>
+          <ul className="space-y-2">
+            {[
+              'Insufficient funds in your account',
+              'Card details entered incorrectly',
+              'Your bank declined the transaction',
+              'Network timeout — try again',
+            ].map((reason, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-neutral-600">
+                <span className="w-1.5 h-1.5 rounded-full bg-neutral-300 mt-1.5 shrink-0" />
+                {reason}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Actions */}
+        <div className="mt-8 space-y-3">
+          <button
+            onClick={() => router.push('/cart/products')}
+            className="w-full h-12 bg-neutral-900 text-white rounded-xl text-sm font-semibold hover:bg-neutral-800 transition-colors flex items-center justify-center gap-2"
+          >
+            <Refresh sx={{ fontSize: 18 }} />
+            Try Again
+          </button>
+          <button
+            onClick={() => router.push('/')}
+            className="w-full h-12 bg-neutral-100 text-neutral-700 rounded-xl text-sm font-medium hover:bg-neutral-200 transition-colors"
+          >
+            Continue Shopping
+          </button>
+        </div>
+
+        <p className="text-xs text-neutral-400 mt-6 flex items-center justify-center gap-1">
+          <HeadsetMic sx={{ fontSize: 14 }} />
+          Still having issues? <span className="text-neutral-700 font-medium cursor-pointer hover:underline">Contact Support</span>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default PaymentFailure;

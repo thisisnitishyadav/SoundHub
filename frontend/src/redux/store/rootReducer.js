@@ -3,6 +3,7 @@ import { reducer as authReducer} from "../slices/auth";
 import { reducer as productReducer} from '../slices/product';
 import { reducer as cartReducer} from '../slices/cart';
 import { reducer as orderReducer} from '../slices/order';
+import { reducer as wishlistReducer} from '../slices/wishlist';
 
 
 export const rootReducer =combineReducers({
@@ -10,4 +11,5 @@ export const rootReducer =combineReducers({
     product:productReducer,
     cart:cartReducer,
     order:orderReducer,
+    wishlist:wishlistReducer,
 })
