@@ -1,222 +1,485 @@
 'use client'
-import { Favorite, Person, ShoppingBag, Menu, Close } from '@mui/icons-material';
-import { Box, InputAdornment, TextField, Drawer, List, ListItem, ListItemText, Divider } from '@mui/material';
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useDispatch, useSelector } from 'react-redux';
-import { getProducts } from '@/redux/slices/product';
-import IconButton from '@mui/material/IconButton';
-import SearchIcon from '@mui/icons-material/Search';
+import {
+  Person,
+  ShoppingBag,
+  Menu,
+  Close,
+  Search,
+  KeyboardArrowDown,
+  FavoriteBorder,
+  LocalShipping,
+  Percent,
+} from '@mui/icons-material';
+import React, { useEffect, useState, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { useSelector } from 'react-redux';
 
 const Navbar = () => {
   const router = useRouter();
-  const dispatch = useDispatch();
-  const { product } = useSelector((state) => state.product);
-  const [isVisible, setVisible] = useState(false);
+  const pathname = usePathname();
+  const { carts } = useSelector((state) => state.cart);
+  const { user } = useSelector((state) => state.auth);
+
+  const [megaMenuOpen, setMegaMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [collectionz, setCollectionz] = useState('');
   const [query, setQuery] = useState('');
+  const megaMenuTimeout = useRef(null);
+  const searchInputRef = useRef(null);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
+    const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleMouseEnter = () => setVisible(true);
-  const handleMouseLeave = () => setVisible(false);
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (mobileSearchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [mobileSearchOpen]);
+
+  const handleMegaMenuEnter = () => {
+    clearTimeout(megaMenuTimeout.current);
+    setMegaMenuOpen(true);
+  };
+
+  const handleMegaMenuLeave = () => {
+    megaMenuTimeout.current = setTimeout(() => setMegaMenuOpen(false), 200);
+  };
 
   const handleProductQuery = (value) => {
-    setCollectionz(value);
+    setMegaMenuOpen(false);
     setMobileMenuOpen(false);
     router.push(`/collection/${value}`);
   };
 
-  const handleCartQuery = () => router.push('/cart/products');
-
-  const fetchProduct = async () => {
-    let result = await dispatch(getProducts(1, 10, { 'category': collectionz }));
-    if (result) return true;
-  };
-
   const handleSearch = (e) => {
     e.preventDefault();
-    if (query.trim() !== '') {
+    if (query.trim()) {
       router.push(`/collection/${query}`);
+      setQuery('');
+      setMobileSearchOpen(false);
     }
   };
 
-  useEffect(() => {
-    fetchProduct();
-  }, [collectionz]);
+  const isLoggedIn = user && Object.keys(user).length > 0;
+  const cartCount = carts?.length || 0;
 
   const categories = [
-    { label: 'Wireless Earbuds', value: 'wireless-earphones', img: 'https://www.boat-lifestyle.com/cdn/shop/collections/dropdown-TWS_100x.png?v=1684827062' },
-    { label: 'Neckbands', value: 'neckbands', img: 'https://www.boat-lifestyle.com/cdn/shop/collections/Neckbands_06214c1a-5e30-48ea-ac14-4a6bff679f48_100x.png?v=1684828287' },
-    { label: 'Smart Watches', value: 'smart-watches', img: 'https://www.boat-lifestyle.com/cdn/shop/collections/smartwatches_100x.png?v=1684827668' },
-    { label: 'Headphones', value: 'headphone', img: 'https://www.boat-lifestyle.com/cdn/shop/collections/Rectangle271_100x.png?v=1701414051' },
-    { label: 'Wireless Speakers', value: 'wireless-speakers', img: 'https://www.boat-lifestyle.com/cdn/shop/collections/box-5_100x.png?v=1684827751' },
-    { label: 'Party Speakers', value: 'party-speakers', img: 'https://www.boat-lifestyle.com/cdn/shop/collections/sound_bar_4f111a6a-2482-41c8-87f2-db7e0ee19e69_1_100x.webp?v=1684827961' },
+    {
+      label: 'Wireless Earbuds',
+      value: 'wireless-earphones',
+      img: 'https://www.boat-lifestyle.com/cdn/shop/collections/dropdown-TWS_100x.png?v=1684827062',
+      desc: 'True wireless freedom',
+    },
+    {
+      label: 'Neckbands',
+      value: 'neckbands',
+      img: 'https://www.boat-lifestyle.com/cdn/shop/collections/Neckbands_06214c1a-5e30-48ea-ac14-4a6bff679f48_100x.png?v=1684828287',
+      desc: 'All-day comfort',
+    },
+    {
+      label: 'Smart Watches',
+      value: 'smart-watches',
+      img: 'https://www.boat-lifestyle.com/cdn/shop/collections/smartwatches_100x.png?v=1684827668',
+      desc: 'Stay connected',
+    },
+    {
+      label: 'Headphones',
+      value: 'headphone',
+      img: 'https://www.boat-lifestyle.com/cdn/shop/collections/Rectangle271_100x.png?v=1701414051',
+      desc: 'Immersive sound',
+    },
+    {
+      label: 'Wireless Speakers',
+      value: 'wireless-speakers',
+      img: 'https://www.boat-lifestyle.com/cdn/shop/collections/box-5_100x.png?v=1684827751',
+      desc: 'Room-filling audio',
+    },
+    {
+      label: 'Party Speakers',
+      value: 'party-speakers',
+      img: 'https://www.boat-lifestyle.com/cdn/shop/collections/sound_bar_4f111a6a-2482-41c8-87f2-db7e0ee19e69_1_100x.webp?v=1684827961',
+      desc: 'Turn it up',
+    },
+  ];
+
+  const navLinks = [
+    { label: 'New Arrivals', href: '/collection/new-arrivals' },
+    { label: 'Best Sellers', href: '/collection/best-sellers' },
+    { label: 'Offers', href: '/collection/offers' },
   ];
 
   return (
-    <div className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-xl shadow-sm border-b border-gray-100' : 'bg-white/0 backdrop-blur-sm'}`}>
-      <div className="flex mx-4 md:mx-8 lg:mx-12 h-[60px] md:h-[70px] items-center justify-between max-w-7xl xl:mx-auto">
-
-        <div className="flex items-center gap-3">
-          <div className="md:hidden cursor-pointer p-1.5 rounded-lg hover:bg-black/5 transition-colors" onClick={() => setMobileMenuOpen(true)}>
-            <Menu sx={{ fontSize: 22, color: scrolled ? '#374151' : '#374151' }} />
-          </div>
-          <img
-            src="https://soundhub.io/wp-content/uploads/2023/08/SoundHub-Logo-2048x410.png"
-            alt="SoundHub"
-            className="h-[26px] md:h-[32px] cursor-pointer"
-            onClick={() => router.push('/')}
-          />
+    <>
+      {/* Announcement Bar */}
+      <div className="bg-neutral-900 text-white text-center text-[11px] sm:text-xs tracking-wide py-2 px-4 select-none">
+        <div className="flex items-center justify-center gap-2">
+          <LocalShipping sx={{ fontSize: 14 }} />
+          <span>Free shipping on orders above &#8377;999</span>
+          <span className="hidden sm:inline mx-2 opacity-30">|</span>
+          <span className="hidden sm:flex items-center gap-1">
+            <Percent sx={{ fontSize: 13 }} />
+            Use code <strong className="font-semibold">SOUND10</strong> for 10% off
+          </span>
         </div>
+      </div>
 
-        <div className="md:flex md:items-center gap-1 hidden">
-          <div className="cursor-pointer relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-            <p className="text-[13px] text-gray-600 hover:text-gray-900 transition-colors px-3 py-2 rounded-lg hover:bg-gray-50">Categories</p>
-            {isVisible && (
-              <div className="bg-white border border-gray-100 p-5 rounded-2xl shadow-2xl shadow-black/10 absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 min-w-[460px]">
-                <div className="grid grid-cols-2 gap-1">
-                  {categories.map((cat) => (
-                    <div key={cat.value} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => handleProductQuery(cat.value)}>
-                      <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0">
-                        <img src={cat.img} alt={cat.label} className="w-7 h-7 object-contain" />
-                      </div>
-                      <p className="text-sm text-gray-700 font-medium">{cat.label}</p>
+      {/* Main Navbar */}
+      <nav
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? 'bg-white/80 backdrop-blur-2xl shadow-[0_1px_3px_rgba(0,0,0,0.05)] border-b border-neutral-100'
+            : 'bg-white border-b border-transparent'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Left: Hamburger + Logo */}
+            <div className="flex items-center gap-3 min-w-0">
+              <button
+                className="lg:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-neutral-100 transition-colors"
+                onClick={() => setMobileMenuOpen(true)}
+                aria-label="Open menu"
+              >
+                <Menu sx={{ fontSize: 22 }} />
+              </button>
+
+              <img
+                src="https://soundhub.io/wp-content/uploads/2023/08/SoundHub-Logo-2048x410.png"
+                alt="SoundHub"
+                className="h-7 sm:h-8 cursor-pointer shrink-0"
+                onClick={() => router.push('/')}
+              />
+            </div>
+
+            {/* Center: Nav Links + Categories */}
+            <div className="hidden lg:flex items-center gap-1 ml-10">
+              {/* Categories Mega Menu Trigger */}
+              <div
+                className="relative"
+                onMouseEnter={handleMegaMenuEnter}
+                onMouseLeave={handleMegaMenuLeave}
+              >
+                <button
+                  className={`flex items-center gap-0.5 text-sm font-medium px-3 py-2 rounded-lg transition-colors ${
+                    megaMenuOpen
+                      ? 'text-neutral-900 bg-neutral-100'
+                      : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
+                  }`}
+                >
+                  Categories
+                  <KeyboardArrowDown
+                    sx={{
+                      fontSize: 18,
+                      transition: 'transform 0.2s',
+                      transform: megaMenuOpen ? 'rotate(180deg)' : 'rotate(0)',
+                    }}
+                  />
+                </button>
+
+                {/* Mega Menu */}
+                <div
+                  className={`absolute top-full left-0 mt-1 transition-all duration-200 origin-top-left ${
+                    megaMenuOpen
+                      ? 'opacity-100 scale-100 pointer-events-auto'
+                      : 'opacity-0 scale-95 pointer-events-none'
+                  }`}
+                >
+                  <div className="bg-white rounded-2xl shadow-xl shadow-black/8 border border-neutral-100 p-5 w-[520px]">
+                    <div className="grid grid-cols-2 gap-1">
+                      {categories.map((cat) => (
+                        <button
+                          key={cat.value}
+                          onClick={() => handleProductQuery(cat.value)}
+                          className="flex items-center gap-3 p-3 rounded-xl hover:bg-neutral-50 transition-colors text-left group"
+                        >
+                          <div className="w-11 h-11 rounded-xl bg-neutral-50 group-hover:bg-white group-hover:shadow-sm flex items-center justify-center shrink-0 transition-all">
+                            <img
+                              src={cat.img}
+                              alt={cat.label}
+                              className="w-7 h-7 object-contain"
+                            />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-neutral-800 group-hover:text-neutral-950">
+                              {cat.label}
+                            </p>
+                            <p className="text-xs text-neutral-400 mt-0.5">
+                              {cat.desc}
+                            </p>
+                          </div>
+                        </button>
+                      ))}
                     </div>
-                  ))}
+                    <div className="mt-3 pt-3 border-t border-neutral-100">
+                      <button
+                        onClick={() => handleProductQuery('all')}
+                        className="text-sm font-medium text-neutral-900 hover:text-black flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-neutral-50 transition-colors"
+                      >
+                        View all categories
+                        <span className="text-xs">→</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
-          {['Hub Personalisation', 'Gift with Hub', 'Corporates Order'].map((item) => (
-            <div key={item} className="cursor-pointer">
-              <p className="text-[13px] text-gray-600 hover:text-gray-900 transition-colors px-3 py-2 rounded-lg hover:bg-gray-50">{item}</p>
+
+              {navLinks.map((link) => (
+                <button
+                  key={link.label}
+                  onClick={() => router.push(link.href)}
+                  className="text-sm font-medium text-neutral-600 hover:text-neutral-900 px-3 py-2 rounded-lg hover:bg-neutral-50 transition-colors"
+                >
+                  {link.label}
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
 
-        <div className="flex items-center gap-2">
-          <div className="md:flex hidden">
-            <form onSubmit={handleSearch}>
-              <Box sx={{ maxWidth: 220 }}>
-                <TextField
-                  variant="outlined"
-                  size="small"
-                  placeholder="Search..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  fullWidth
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <IconButton type="submit" aria-label="search" size="small">
-                          <SearchIcon sx={{ fontSize: 18, color: '#9ca3af' }} />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                    sx: {
-                      '& fieldset': { borderRadius: '12px', borderColor: '#e5e7eb' },
-                      '&:hover fieldset': { borderColor: '#d1d5db !important' },
-                      fontSize: '13px',
-                      backgroundColor: '#f9fafb',
-                      height: '38px',
-                    },
-                  }}
-                />
-              </Box>
-            </form>
-          </div>
-
-          <div className="cursor-pointer p-2 rounded-xl hover:bg-gray-100 transition-colors" onClick={() => router.push('/login')}>
-            <Person sx={{ fontSize: 20, color: '#374151' }} />
-          </div>
-          <div className="cursor-pointer p-2 rounded-xl hover:bg-gray-100 transition-colors">
-            <Favorite sx={{ fontSize: 20, color: '#374151' }} />
-          </div>
-          <div className="cursor-pointer p-2 rounded-xl hover:bg-gray-100 transition-colors relative" onClick={() => handleCartQuery()}>
-            <ShoppingBag sx={{ fontSize: 20, color: '#374151' }} />
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white/95 mx-4 md:mx-8 pb-3 md:hidden">
-        <form onSubmit={handleSearch}>
-          <Box>
-            <TextField
-              variant="outlined"
-              size="small"
-              placeholder="Search products..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              fullWidth
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <IconButton type="submit" aria-label="search" size="small">
-                      <SearchIcon sx={{ fontSize: 18, color: '#9ca3af' }} />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-                sx: {
-                  '& fieldset': { borderRadius: '12px', borderColor: '#e5e7eb' },
-                  fontSize: '13px',
-                  backgroundColor: '#f9fafb',
-                  height: '38px',
-                },
-              }}
-            />
-          </Box>
-        </form>
-      </div>
-
-      <Drawer
-        anchor="left"
-        open={mobileMenuOpen}
-        onClose={() => setMobileMenuOpen(false)}
-        PaperProps={{ sx: { borderTopRightRadius: '20px', borderBottomRightRadius: '20px', width: 300 } }}
-      >
-        <Box sx={{ width: 300 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2.5 }}>
-            <img src="https://soundhub.io/wp-content/uploads/2023/08/SoundHub-Logo-2048x410.png" alt="logo" style={{ height: 26 }} />
-            <IconButton onClick={() => setMobileMenuOpen(false)} sx={{ '&:hover': { backgroundColor: '#f3f4f6' } }}>
-              <Close sx={{ fontSize: 20 }} />
-            </IconButton>
-          </Box>
-          <Divider />
-          <List sx={{ px: 1, pt: 1 }}>
-            <ListItem>
-              <ListItemText primary="Categories" primaryTypographyProps={{ fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', color: '#9ca3af', letterSpacing: '0.1em' }} />
-            </ListItem>
-            {categories.map((cat) => (
-              <ListItem
-                key={cat.value}
-                onClick={() => handleProductQuery(cat.value)}
-                sx={{ cursor: 'pointer', pl: 2, borderRadius: '12px', mx: 0.5, mb: 0.5, '&:hover': { backgroundColor: '#f9fafb' } }}
+            {/* Right: Search + Actions */}
+            <div className="flex items-center gap-1">
+              {/* Desktop Search */}
+              <form
+                onSubmit={handleSearch}
+                className="hidden md:flex items-center relative"
               >
-                <div className="w-9 h-9 rounded-lg bg-gray-50 flex items-center justify-center mr-3 flex-shrink-0">
-                  <img src={cat.img} alt={cat.label} style={{ width: 24, height: 24, objectFit: 'contain' }} />
+                <div className="relative">
+                  <Search
+                    sx={{ fontSize: 18 }}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+                  />
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search products..."
+                    className="w-52 h-9 pl-9 pr-3 text-sm bg-neutral-100/80 border border-transparent rounded-xl outline-none transition-all placeholder:text-neutral-400 text-neutral-700 focus:w-64 focus:bg-white focus:border-neutral-200 focus:shadow-sm"
+                  />
                 </div>
-                <ListItemText primary={cat.label} primaryTypographyProps={{ fontSize: '14px', fontWeight: 500 }} />
-              </ListItem>
-            ))}
-          </List>
-          <Divider sx={{ mx: 2 }} />
-          <List sx={{ px: 1 }}>
-            {['Hub Personalisation', 'Gift with Hub', 'Corporates Order'].map((item) => (
-              <ListItem key={item} sx={{ cursor: 'pointer', borderRadius: '12px', mx: 0.5, mb: 0.5, '&:hover': { backgroundColor: '#f9fafb' } }}>
-                <ListItemText primary={item} primaryTypographyProps={{ fontSize: '14px', fontWeight: 500 }} />
-              </ListItem>
-            ))}
-          </List>
-        </Box>
-      </Drawer>
-    </div>
+              </form>
+
+              {/* Mobile Search Toggle */}
+              <button
+                className="md:hidden p-2 rounded-xl hover:bg-neutral-100 transition-colors"
+                onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+                aria-label="Search"
+              >
+                <Search sx={{ fontSize: 20, color: '#525252' }} />
+              </button>
+
+              {/* Account */}
+              <button
+                className="p-2 rounded-xl hover:bg-neutral-100 transition-colors relative group"
+                onClick={() =>
+                  router.push(isLoggedIn ? '/myAccount' : '/login')
+                }
+                aria-label="Account"
+              >
+                <Person sx={{ fontSize: 20, color: '#525252' }} />
+                {isLoggedIn && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white" />
+                )}
+              </button>
+
+              {/* Wishlist */}
+              <button
+                className="hidden sm:flex p-2 rounded-xl hover:bg-neutral-100 transition-colors"
+                aria-label="Wishlist"
+              >
+                <FavoriteBorder sx={{ fontSize: 20, color: '#525252' }} />
+              </button>
+
+              {/* Cart */}
+              <button
+                className="p-2 rounded-xl hover:bg-neutral-100 transition-colors relative"
+                onClick={() => router.push('/cart/products')}
+                aria-label="Cart"
+              >
+                <ShoppingBag sx={{ fontSize: 20, color: '#525252' }} />
+                {cartCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-neutral-900 text-white text-[10px] font-bold rounded-full px-1 ring-2 ring-white">
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Search Bar (expandable) */}
+        <div
+          className={`md:hidden overflow-hidden transition-all duration-300 ${
+            mobileSearchOpen ? 'max-h-16 opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <form
+            onSubmit={handleSearch}
+            className="px-4 pb-3"
+          >
+            <div className="relative">
+              <Search
+                sx={{ fontSize: 18 }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+              />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search products..."
+                className="w-full h-10 pl-9 pr-4 text-sm bg-neutral-100 rounded-xl outline-none placeholder:text-neutral-400 text-neutral-700 focus:bg-white focus:ring-2 focus:ring-neutral-200 transition-all"
+              />
+            </div>
+          </form>
+        </div>
+      </nav>
+
+      {/* Mobile Menu Overlay */}
+      <div
+        className={`fixed inset-0 z-[100] transition-opacity duration-300 lg:hidden ${
+          mobileMenuOpen
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        {/* Backdrop */}
+        <div
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+
+        {/* Drawer */}
+        <div
+          className={`absolute top-0 left-0 h-full w-[300px] max-w-[85vw] bg-white shadow-2xl transition-transform duration-300 ${
+            mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          {/* Drawer Header */}
+          <div className="flex items-center justify-between p-4 border-b border-neutral-100">
+            <img
+              src="https://soundhub.io/wp-content/uploads/2023/08/SoundHub-Logo-2048x410.png"
+              alt="SoundHub"
+              className="h-6"
+            />
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-1.5 rounded-lg hover:bg-neutral-100 transition-colors"
+              aria-label="Close menu"
+            >
+              <Close sx={{ fontSize: 20 }} />
+            </button>
+          </div>
+
+          {/* Drawer Body */}
+          <div className="overflow-y-auto h-[calc(100%-65px)]">
+            {/* Categories */}
+            <div className="p-4">
+              <p className="text-[10px] font-bold tracking-[0.15em] uppercase text-neutral-400 mb-3 px-1">
+                Shop by Category
+              </p>
+              <div className="space-y-0.5">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.value}
+                    onClick={() => handleProductQuery(cat.value)}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-50 active:bg-neutral-100 transition-colors text-left"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-neutral-50 flex items-center justify-center shrink-0">
+                      <img
+                        src={cat.img}
+                        alt={cat.label}
+                        className="w-6 h-6 object-contain"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-neutral-800">
+                        {cat.label}
+                      </p>
+                      <p className="text-[11px] text-neutral-400">{cat.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mx-4 border-t border-neutral-100" />
+
+            {/* Nav Links */}
+            <div className="p-4">
+              <p className="text-[10px] font-bold tracking-[0.15em] uppercase text-neutral-400 mb-3 px-1">
+                Explore
+              </p>
+              <div className="space-y-0.5">
+                {navLinks.map((link) => (
+                  <button
+                    key={link.label}
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      router.push(link.href);
+                    }}
+                    className="w-full text-left text-sm font-medium text-neutral-700 hover:text-neutral-900 p-2.5 rounded-xl hover:bg-neutral-50 active:bg-neutral-100 transition-colors"
+                  >
+                    {link.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mx-4 border-t border-neutral-100" />
+
+            {/* Account Section */}
+            <div className="p-4 space-y-0.5">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  router.push(isLoggedIn ? '/myAccount' : '/login');
+                }}
+                className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-50 active:bg-neutral-100 transition-colors text-left"
+              >
+                <div className="w-10 h-10 rounded-lg bg-neutral-50 flex items-center justify-center">
+                  <Person sx={{ fontSize: 20, color: '#525252' }} />
+                </div>
+                <p className="text-sm font-medium text-neutral-700">
+                  {isLoggedIn ? 'My Account' : 'Sign In'}
+                </p>
+              </button>
+
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  router.push('/orders');
+                }}
+                className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-50 active:bg-neutral-100 transition-colors text-left"
+              >
+                <div className="w-10 h-10 rounded-lg bg-neutral-50 flex items-center justify-center">
+                  <LocalShipping sx={{ fontSize: 20, color: '#525252' }} />
+                </div>
+                <p className="text-sm font-medium text-neutral-700">
+                  My Orders
+                </p>
+              </button>
+
+              <button
+                className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-neutral-50 active:bg-neutral-100 transition-colors text-left"
+              >
+                <div className="w-10 h-10 rounded-lg bg-neutral-50 flex items-center justify-center">
+                  <FavoriteBorder sx={{ fontSize: 20, color: '#525252' }} />
+                </div>
+                <p className="text-sm font-medium text-neutral-700">
+                  Wishlist
+                </p>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 };
 
