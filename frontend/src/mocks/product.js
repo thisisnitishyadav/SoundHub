@@ -1,19 +1,15 @@
 import axios from "axios";
+import privateRequest from "../requestMethod";
 
 class ProductApi{
 
     async getProduct(id){
-       const response = await axios.get(`${process.env.NEXT_PUBLIC_HOST}/userapp/product/get/${id}`,{
-        method: "get",
-        headers: { 
-        "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
-        }
-      });
+       const response = await privateRequest.get(`/product/get/${id}`);
        if(response.data.status==='SUCCESS')
        return response.data;
        else
         return false;
-    } 
+    }
 
     async getProducts(page,limit,filters){
         let obj ={
@@ -41,23 +37,18 @@ class ProductApi{
         return response.data;
         else
          return false;
-     } 
-  
+     }
+
 
     async deleteProduct(id){
-      const response = await axios.delete(`${process.env.NEXT_PUBLIC_HOST}/userapp/product/delete/${id}`,{
-        method: "delete",
-        headers: { 
-        "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
-        }
-      });
+      const response = await privateRequest.delete(`/product/delete/${id}`);
         if(response.data.status==='SUCCESS')
         return response.data;
         else
          return false;
-    } 
+    }
 
- 
+
 }
 
 export const productApi = new ProductApi();

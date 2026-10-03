@@ -1,22 +1,17 @@
-import axios from "axios";
+import privateRequest from "../requestMethod";
 
 
 class CartApi{
 
-    
+
     async createCart(data){
-   
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/userapp/cart/create`,data,{
-          method: "post",
-          headers: { 
-          "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
-          }
-        });
+
+        const response = await privateRequest.post('/cart/create', data);
           if(response.data.status==='SUCCESS')
           return response.data;
           else
            return false;
-      } 
+      }
 
 
       async readCart(page,limit,filters){
@@ -40,26 +35,16 @@ class CartApi{
         },
         "isCountOnly": false
       }
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/userapp/cart/list`,obj,{
-          method: "post",
-          headers: { 
-          "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
-          }
-        });
-        
+        const response = await privateRequest.post('/cart/list', obj);
+
           if(response.data.status==='SUCCESS')
           return response.data;
           else
            return false;
-      } 
+      }
 
       async updateCart(data,id){
-        const response = await axios.put(`${process.env.NEXT_PUBLIC_HOST}/userapp/cart/update/${id}`,data,{
-          method: "put",
-          headers: { 
-          "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
-          }
-        });
+        const response = await privateRequest.put(`/cart/update/${id}`, data);
           if(response.data.status==='SUCCESS')
           return response.data;
           else
@@ -67,34 +52,24 @@ class CartApi{
       }
 
     async deleteCart(id){
-      const response = await axios.delete(`${process.env.NEXT_PUBLIC_HOST}/userapp/cart/delete/${id}`,{
-        method: "delete",
-        headers: { 
-        "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
-        }
-      });
+      const response = await privateRequest.delete(`/cart/delete/${id}`);
         if(response.data.status==='SUCCESS')
         return response.data;
         else
          return false;
-    } 
+    }
 
     async deleteMany(ids){
 
       let obj = {ids}
-      
-      const response = await axios.put(`${process.env.NEXT_PUBLIC_HOST}/userapp/cart/softDeleteMany`,obj,{
-        method: "put",
-        headers: { 
-        "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
-        }
-      });
+
+      const response = await privateRequest.put('/cart/softDeleteMany', obj);
         if(response.data.status==='SUCCESS')
         return response.data;
         else
          return false;
-    } 
-   
+    }
+
 
 }
 

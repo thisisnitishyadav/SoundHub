@@ -1,23 +1,18 @@
-import axios from "axios";
+import privateRequest from "../requestMethod";
 
 
 class OrderApi{
 
-   
+
 
     async createOrder(data){
-   
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/userapp/order/create`,data,{
-          method: "post",
-          headers: { 
-          "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
-          }
-        });
+
+        const response = await privateRequest.post('/order/create', data);
           if(response.data.status==='SUCCESS')
           return response.data;
           else
            return false;
-      } 
+      }
 
 
       async getOrder(page,limit,filters){
@@ -41,26 +36,16 @@ class OrderApi{
         },
         "isCountOnly": false
       }
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/userapp/order/list`,obj,{
-          method: "post",
-          headers: { 
-          "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
-          }
-        });
-        
+        const response = await privateRequest.post('/order/list', obj);
+
           if(response.data.status==='SUCCESS')
           return response.data;
           else
            return response.data;
-      } 
+      }
 
       async updateOrder(data,id){
-        const response = await axios.put(`${process.env.NEXT_PUBLIC_HOST}/userapp/order/update/${id}`,data,{
-          method: "put",
-          headers: { 
-          "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
-          }
-        });
+        const response = await privateRequest.put(`/order/update/${id}`, data);
           if(response.data.status==='SUCCESS')
           return response.data;
           else
@@ -78,11 +63,7 @@ class OrderApi{
           },
           "isCountOnly": false
         };
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/userapp/order/list`, obj, {
-          headers: {
-            "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
-          }
-        });
+        const response = await privateRequest.post('/order/list', obj);
         if (response.data.status === 'SUCCESS') {
           const orders = response.data.data?.data || [];
           return { status: 'SUCCESS', data: orders[0] || null };
@@ -91,20 +72,15 @@ class OrderApi{
       }
 
     async deleteOrder(id){
-      const response = await axios.delete(`${process.env.NEXT_PUBLIC_HOST}/userapp/order/delete/${id}`,{
-        method: "delete",
-        headers: { 
-        "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
-        }
-      });
+      const response = await privateRequest.delete(`/order/delete/${id}`);
         if(response.data.status==='SUCCESS')
         return response.data;
         else
          return false;
-    } 
+    }
 
- 
-   
+
+
 
 }
 

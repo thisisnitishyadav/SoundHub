@@ -1,11 +1,12 @@
 import axios from "axios";
+import privateRequest from "../requestMethod";
 
 
 class AuthApi{
     async signup(data){
         try {
             const res = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/userapp/auth/register`, data);
-            
+
             if (res) {
                 return res;
             } else {
@@ -32,17 +33,11 @@ class AuthApi{
         }
     }
 
-    
+
     async getUser(){
 
     try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_HOST}/userapp/user/me`,{
-            method:'get',
-            headers:{
-                "Authorization": `Bearer ${localStorage.getItem('accessToken')}`
-            }
-            
-        })
+        const res = await privateRequest.get('/user/me');
 
         if(res?.data?.status === "SUCCESS"){
             return res.data
@@ -50,35 +45,25 @@ class AuthApi{
             return false
         }
     } catch (error) {
-      console.log(error);  
+      console.log(error);
     }
    }
 
     async updateUser(data,id){
-     const response = await axios.put(`${process.env.NEXT_PUBLIC_HOST}/userapp/user/update/${id}`,data,{
-      method: "put",
-      headers: { 
-      "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
-      }
-    });
+     const response = await privateRequest.put(`/user/update/${id}`, data);
       if(response.data.status==='SUCCESS')
       return response.data;
       else
        return false;
-  } 
+  }
 
     async deleteUser(id){
-      const response = await axios.delete(`${process.env.NEXT_PUBLIC_HOST}/userapp/user/delete/${id}`,{
-      method: "delete",
-      headers: { 
-      "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
-      }
-    });
+      const response = await privateRequest.delete(`/user/delete/${id}`);
       if(response.data.status==='SUCCESS')
       return response.data;
       else
        return false;
-    } 
+    }
 
   async sendResetPasswordOtp(data) {
     try {
